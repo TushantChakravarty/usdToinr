@@ -57,7 +57,7 @@ function Account() {
         setShow(false)
     }
 
-    useEffect(() => {
+   /* useEffect(() => {
         if (eth) {
             eth.on('chainChanged', (chainId) => {
                 fetchAccountData()
@@ -66,7 +66,7 @@ function Account() {
                 fetchAccountData()
             })
         }
-    }, [])
+    }, [])*/
 
     const isConnected = data.account !== ""
 

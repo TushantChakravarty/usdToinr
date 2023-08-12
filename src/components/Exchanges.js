@@ -10,93 +10,12 @@ function Exchanges(props) {
   const {rate} = props
   const currentNet = data.network !== "" ? data.network : "Ethereum Mainnet";
 
-  async function getPrices() {
-    if (window.ethereum !== undefined) {
-      const provider = new ethers.providers.Web3Provider(
-        window.ethereum,
-        "any"
-      );
-
-      const _tokenIn = tokens[currentNet][props.token0]["address"];
-      const _tokenOut = tokens[currentNet][props.token1]["address"];
-      let path = [_tokenIn, _tokenOut];
-
-      const decimals = tokens[currentNet][props.token1]["decimals"];
-
-      let amountIn = utils.parseEther("1", "ether");
-
-      const items = await Promise.all(
-        exchanges[currentNet].map(async (e) => {
-          if (e.name !== "Uniswap V3") {
-            const router = new ethers.Contract(
-              e.address,
-              e.router.abi,
-              provider
-            );
-            try {
-              const amount = await router.getAmountsOut(amountIn, path);
-
-              let item = {
-                exchange: e.name,
-                price: amount[1] / 10 ** decimals,
-              };
-              return item;
-            } catch (err) {
-              let item = {
-                exchange: e.name,
-                price: 0,
-              };
-              return item;
-            }
-          } else {
-            const quoter = new ethers.Contract(
-              e.address,
-              e.quoter.abi,
-              provider
-            );
-            try {
-              const amount = await quoter.callStatic.quoteExactInputSingle(
-                _tokenIn,
-                _tokenOut,
-                3000,
-                amountIn,
-                0
-              );
-
-              let item = {
-                exchange: e.name,
-                price: amount / 10 ** decimals,
-              };
-              return item;
-            } catch (err) {
-              let item = {
-                exchange: e.name,
-                price: 0,
-              };
-              return item;
-            }
-          }
-        })
-      );
-      setAmounts(items);
-    }
-  }
-
-  /*
-    setInterval(() => {
-        getPrices()
-    }, 30000);
-    */
-
-  useEffect(() => {
-    if (window.ethereum != undefined && data.network !== "") {
-     // getPrices();
-    }
-  }, [props.token0, props.token1, data.network]);
-
+  
+  
   return (
     <>
-      <Table>
+    <div style={{display:'flex',alignSelf:'flex-start'}}>
+      <Table style={{width:200}}>
         <thead>
           <tr>
             <th>Exchange</th>
@@ -104,10 +23,11 @@ function Exchanges(props) {
           </tr>
         </thead>
         <tbody>
-          <td>USDT</td>
+          <td>1 USDT</td>
           <td>{rate?rate:'81.992'}</td>{" "}
         </tbody>
       </Table>
+      </div>
     </>
   );
 }

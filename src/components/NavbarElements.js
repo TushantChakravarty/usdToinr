@@ -1,14 +1,12 @@
 import styled from 'styled-components';
 
 export const NoteNav = styled.nav`
-  background: black;
+  background: white;
   height: 30px;
   width: 450px;
   text-align: center;
   display: block;
   margin: 0px auto;
-  margin-bottom: 80px;
-  
   @media (max-width: 32em) {
     width: 250px;
     height: 50px;
@@ -24,7 +22,7 @@ export const NavBar = styled.nav`
 `;
 
 export const Note = styled.div`
-  color: white;
+  color: black;
   align-text: center;
   font-size: 14px;
 

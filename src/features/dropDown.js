@@ -13,18 +13,21 @@ export default function DropDown({network, setNetwork}) {
   };
 
   return (
-    <Box sx={{ minWidth: 150, padding:5 }}>
-      <FormControl fullWidth>
-        <InputLabel id="demo-simple-select-label">Network</InputLabel>
+    <Box sx={{ minWidth: '20vw', padding:3}}>
+      <FormControl fullWidth >
+        <InputLabel id="demo-simple-select-label">Select Network</InputLabel>
         <Select
+          style={{backgroundColor:'white'}}
           labelId="demo-simple-select-label"
           id="demo-simple-select"
           value={network}
-          label="Age"
+          label="network"
           onChange={handleChange}
         >
           <MenuItem value={'Ethereum'}>Ethereum</MenuItem>
           <MenuItem value={'Binance'}>Binance</MenuItem>
+          <MenuItem value={'Tron'}>Tron</MenuItem>
+
         </Select>
       </FormControl>
     </Box>
