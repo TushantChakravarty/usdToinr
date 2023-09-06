@@ -33,6 +33,9 @@ import useWindowSize from "@rooks/use-window-size";
 import ConfirmModal from "./modals/Confirm.modal";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ConstructionOutlined } from "@mui/icons-material";
+import { sendEmail } from "../utils/sendEmail";
+import { validateAdddress } from "./functions/walletAddress";
+import SnackbarComponent from "../utils/Alert";
 
 // const sdk = require('api')('@tron/v4.7.2#yjene18lkb02sjx');
 const { Web3 } = require("web3");
@@ -51,9 +54,15 @@ export default function ManualCard({ Data }) {
   const [amount, setAmount] = React.useState();
   const [loading, setLoading] = React.useState(false);
   const [confirm, setConfirm] = React.useState(false);
-  const [exchangeRate, getExchangeRate] = React.useState(0);
+  const [exchangeRate, getExchangeRate] = React.useState(85.07);
   const [userWallet, setUserWallet] = React.useState("");
+  const[message, setMessage] = React.useState()
+  const [disable, setDisable] = React.useState(false)
+  const [fullTx, setFullTx] = React.useState()
   const location = useLocation();
+  const[openSnackbar, setSnackbar] = React.useState(false)
+  const[snackbarMessage, setSnackbarMessage] = React.useState('')
+  const [type, setType] = React.useState('')
   let customerData = location?.state?.data ? location.state.data : null;
 
   const navigate = useNavigate();
@@ -72,9 +81,45 @@ export default function ManualCard({ Data }) {
 
     return response;
   };
+  const getCompletedTransactions = async () => {
+    const response = await getDocs(collection(database, "completed")).then(
+      (querySnapshot) => {
+        const newData = querySnapshot.docs.map((doc) => ({
+          ...doc.data(),
+          id: doc.id,
+        }));
+       //console.log(newData)
+      // setData(newData)
+       // setLoad(false);
+        return newData;
+      }
+    );
+
+    return response;
+  };
+
+  const getAllTx = async()=>{
+    const response = await getTransactions()
+    const response2 = await getCompletedTransactions()
+    //console.log(response, response2)
+    if(response)
+    {
+
+     const response3= response.concat(response2)
+      console.log(response3)
+      setFullTx(response3)
+      console.log('all tx set')
+    }
+  }
 
   const Push = async (Data) => {
     try {
+      // let today = new Date();
+      //          let date = today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate();
+      //          let time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+      //          let dateTime = date+', '+time;
+                
+      //          console.log(dateTime)
       const docRef = await addDoc(collection(database, "transactions"), {
         //todo: todo,
         accountNo: Data ? Data.accountNo : customerData.accountNo,
@@ -85,10 +130,18 @@ export default function ManualCard({ Data }) {
         businessType: Data?.businessType ? Data.businessType : "",
         ifscCode: Data ? Data.ifscCode : customerData.ifscCode,
         txHash: Data?.txHash ? Data.txHash : "",
+        wallet:Data?.wallet?Data.wallet:'',
+        upiId:Data?.upiId?Data.upiId:'',
+        phoneNo:Data?.phoneNo?Data.phoneNo:'',
+        date:Data.date,
+        usdt:Data?.usdt?Data.usdt:customerData.usdt,
+        walletAddress:Data.walletAddress?Data.walletAddress:userWallet,
+        rate:Data?.rate?Data.rate:''
       });
       console.log("Document written with ID: ", docRef.id);
       setLoad(false);
-      navigate("/complete");
+    //  Data.date = dateTime
+     // navigate("/complete",{ state: { data: Data } });
       return docRef;
     } catch (e) {
       setLoad(false);
@@ -104,6 +157,34 @@ export default function ManualCard({ Data }) {
       ifscCode: data.ifscCode,
     }).catch(alert);*/
   };
+  const confirmTransaction = (Data)=>{
+    let today = new Date();
+    let date = today.getDate()+'-'+(today.getMonth()+1)+'-'+ today.getFullYear()
+    let time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+    let dateTime = date+', '+time;
+    console.log(dateTime)
+    // setOpen(false)
+    Data.date = dateTime
+    Data.time = time
+   // Data.usdt=20
+    Data.walletAddress = userWallet
+    Data.network=network
+   // Data.txHash = 'qwertyuioiuytrew'
+    console.log(Data)
+    
+    Push(Data)
+    .then((response)=>{
+
+      Data.date = date
+      sendEmail(Data)
+      Data.date = dateTime
+      Data.id = response.id
+      navigate('/complete',{ state: { data: Data } })
+      setLoad(false)
+    })
+
+    // const navigate = useNavigate()
+  }
 
   React.useEffect(() => {
     if (network === "Ethereum" || network === "Binance") {
@@ -114,11 +195,20 @@ export default function ManualCard({ Data }) {
   }, [network]);
   React.useEffect(() => {
     console.log(innerWidth);
+    getAllTx()
     //  getUsdToInr()
     //  .then((response)=>{
-    //    getExchangeRate(response)
+    //    getExchangeRate(Number(response)+2.5)
     //  })
+    
   }, []);
+  React.useEffect(()=>{
+    if(confirm==true)
+    {
+
+      setDisable(true)
+    }
+  },[confirm])
   return (
     <div
       className="App"
@@ -140,10 +230,14 @@ export default function ManualCard({ Data }) {
           backgroundColor: "#F5EEE6",
           boxShadow: "0 0 0px black",
           borderColor: "#D9D9D9",
-          height:innerWidth < 700 ?'80vh': "85vh",
           width: innerWidth < 700 ? "90vw" : "25vw",
+          height:confirm?'80vh':'',
           borderRadius: 0,
-          marginTop: innerWidth < 700 ?1.3:1.2,
+          marginTop: innerWidth < 700 ?1.3:1.2,   
+           border:'2px solid white',
+           borderRadius: '10px',
+
+
         }}
       >
         {confirm ? (
@@ -156,8 +250,8 @@ export default function ManualCard({ Data }) {
               marginTop:'-30%'
             }}
           >
-           Final Step: Sender Wallet
-          </h5>
+            Wallet Address
+          </h5> 
         ) : (
           <h5
             style={{
@@ -165,16 +259,26 @@ export default function ManualCard({ Data }) {
               color: "black",
               width: "50vw",
               fontWeight: "bolder",
-              marginTop:innerWidth < 361 ?'1%':innerWidth < 376 ?'12%':innerWidth < 380 ?'12%':innerWidth<400?'-14%':innerWidth<420?'-21%':innerWidth<700?'-23%':0
+              marginTop:innerWidth < 700 ?'7%':'8%'
             }}
           >
-            Step 3: Transfer USDT
+            Transfer USDT
           </h5>
         )}
 
         {!confirm ? (
-          <div>
-            <div style={{ width:innerWidth < 700 ?'100%': "50%" }}>
+          <div 
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            justifyItems: "center",
+            alignSelf:'center',
+            flexDirection: "column",
+          }}
+          >
+            <div style={{ width:innerWidth < 700 ?'100%': "100%",                  borderRadius: '10px',
+ }}>
               <DropDown network={network} setNetwork={setNetwork} />
             </div>
             <Typography
@@ -193,11 +297,13 @@ export default function ManualCard({ Data }) {
                 alignItems: "center",
                 justifyContent: "center",
                 justifyItems: "center",
+                alignSelf:'center',
                 flexDirection: "column",
                 backgroundColor: "white",
                 padding: 5,
-                width:innerWidth < 700 ?"50vw": "16vw",
-                marginLeft: "10%",
+                width:innerWidth < 700 ?"49vw": "16vw",
+                borderRadius: '10px',
+
               }}
             >
               <p>our wallet address</p>
@@ -215,7 +321,7 @@ export default function ManualCard({ Data }) {
                   backgroundColor: "#2637FF",
                   marginTop: 2,
                   height: "4vh",
-                  borderRadius: 0,
+                  borderRadius: '10px',
                   marginBottom: 2,
                   padding: 2,
                   fontSize: 10,
@@ -225,7 +331,7 @@ export default function ManualCard({ Data }) {
                   },
                 }}
                 onClick={() => {
-                  alert("Copied successfully");
+                  alert("Wallet Address Copied");
                   navigator.clipboard.writeText(walletAddress);
                 }}
               >
@@ -250,9 +356,7 @@ export default function ManualCard({ Data }) {
                 style={{ padding: 15, fontFamily: "sans-serif",marginTop:'10%' }}
               >
                 Enter the wallet address you sent the <br/>
-                USDT from below and we'll transfer 
-                <br />INR funds to your bank account after <br />
-                confirming the transaction
+                USDT from below to verify the transaction
                 </Typography>
               <Stack spacing={1}>
                 <form>
@@ -274,10 +378,34 @@ export default function ManualCard({ Data }) {
                           marginTop:'10%'
                         }}
                         value={userWallet}
-                        onChange={(e) => {
+                        onChange={async (e) => {
                           setUserWallet(e.target.value);
+
+                          if(e.target.value)
+                          {
+                            const validate = await validateAdddress(network,e.target.value)
+                            console.log(validate)
+                            if(validate==true)
+                            {
+                              setDisable(false)
+                              setMessage('')
+                              
+                            }else{
+                              setDisable(true)
+                              setMessage('invalid address')
+                            
+                            }
+                          }else{
+                            setDisable(true)
+                            setMessage('')
+                          }
+                          setUserWallet(e.target.value);
+
                         }}
                       />
+                      <h1 style={{
+                        color:'red'
+                      }}>{message}</h1>
                     </div>
                   </FormControl>
                 </form>
@@ -290,83 +418,189 @@ export default function ManualCard({ Data }) {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
+            paddingBottom:innerHeight<700?30:100,
+            borderRadius: '10px',
+
           }}
         >
           <Button
             type="submit"
+            disabled={disable}
             variant="contained"
             sx={{
               width: innerWidth < 700 ? "50vw" : "18vw",
               height: "7vh",
               backgroundColor: "#2637FF",
-              fontSize: innerWidth < 700 ?14:20,
+              fontSize: innerWidth < 700 ?14:18,
               fontWeight: "bold",
               marginTop: 3,
-              marginLeft:innerWidth>390?1:innerWidth>400?2.5:innerWidth>410?3:0,
-              marginRight:innerWidth<361?1:0,
-              borderRadius: "0",
+              borderRadius: '10px',
               "&:hover": {
                 backgroundColor: "black",
                 color: "white",
               },
             }}
+            
             onClick={async () => {
               if (confirm) {
                 if (!userWallet) {
                   return alert("please enter your wallet address to continue");
                 }
-
+                
                 setLoad(true);
                 if (network === "Tron") {
-                  const AllTX = await getTransactions();
+                 
+                  const AllTX = fullTx//await getTransactions();
                   let finalData = [];
                   let allTx = [];
+                   try{
+
+                 
                   const tx = await getUserTronTransactions(userWallet).then(
-                    (response) => {
+                   async (response) => {
                       // const txDetails = await getTronTransactionDetails(response[0].txID)
                       // console.log(response)
                       //TDnTU6qKv4fNAqdWoFgGW1zBeubNvRiuj6
                       if (response[0]) {
-                        response.map(async (item, index) => {
-                          console.log(item);
-                          await getTronTransactionDetails(item.txID, allTx);
-                          if (index == response.length - 1) {
-                            console.log("All tx", allTx);
-                            allTx.map((item, index) => {
-                              let found;
-                              console.log("index", index);
-                              AllTX.map((Item) => {
-                                // console.log(Item)
-                                if (Item.hash == item.hash) {
-                                  found = true;
+                       // response.map(async (item, index) => {
+                        let finalData =[]
+                        for(let i =0;i<5;i++)
+                        {
+                          if(finalData.length==1)
+                          {
+                            break
+                          }
+                          console.log(response[i]);
+                         const resp = await getTronTransactionDetails(response[i].txID, allTx)
+                         .then((resp)=>{
+                          console.log('my resp', resp)
+                          if(resp.length>0)
+                          {
+                            console.log('tx found')
+                            let found = false
+                            for(let i=0;i<resp.length;i++)
+                            {
+                              for(let j=0;j<AllTX.length;j++)
+                              {
+                                console.log('entered j')
+                                console.log(resp[i],AllTX[j])
+                                if(resp[i].hash==AllTX[j].txHash)
+                                {
+                                  found=true
                                 }
-                              });
-                              if (!found) {
-                                let data = item;
-                                customerData.txHash = item.hash;
-
-                                finalData.push(data);
                               }
-                              if (index === allTx.length - 1) {
-                                if (finalData.length > 0) {
-                                  alert("new transaction found");
+                              console.log(found)
+                              if(!found)
+                              {
+                                const amountInRupee =Number(resp[i].amount) * Number(exchangeRate);
+                                console.log(resp[i].hash)
+                                customerData.txHash = resp[i].hash;
+                                customerData.amount = amountInRupee
+                                customerData.usdt = resp[i].amount
+                                customerData.rate = exchangeRate
+                                console.log('pushed')
+                                finalData.push(resp[i])
+                              }
+                            }
+                           
+                            // resp.map((item)=>{
+                            //   AllTX.map((Item)=>{
+                               
+                            //     if (Item.hash == item.hash) {
+                            //                found = true;
+                            //             }
+                            //   })
+                            //   console.log(found)
+                            //   if(!found)
+                            //   {
+                            //    customerData.txHash = item.hash;
+
+                            //     console.log('pushed')
+                            //     finalData.push(item)
+                            //   }
+                            // })
+                          }
+                        })
+                        console.log(finalData)
+                        if (finalData&&finalData.length > 0) {
+                                 // alert("new transaction found");
                                   console.log(finalData);
-                                  setOpen(true);
+                                  setType('success')
+                                  setSnackbarMessage('New transaction found')
+                                  setSnackbar(true)
+                              
+                                 
+                                  console.log(customerData)
+                                  setLoad(false)
+                                 // setOpen(true);
+                                 confirmTransaction(customerData)
                                   return;
                                 } else {
-                                  alert("no transaction found");
+                                  setType('error')
+                                  setSnackbarMessage('No transaction found. Please Try again')
+                                  setSnackbar(true)
+                                 // alert("No  transaction found, please wait and try again");
+                                  setLoad(false)
                                   return;
                                 }
-                              }
-                            });
-                          }
-                        });
+
+                          // if (i == 2) {
+                          //   console.log("All tx", allTx);
+                          //   allTx.map((item, index) => {
+                          //     let found;
+                          //     console.log("index", index);
+                          //     AllTX.map((Item) => {
+                          //       // console.log(Item)
+                          //       if (Item.hash == item.hash) {
+                          //         found = true;
+                          //       }
+                          //     });
+                          //     if (!found) {
+                          //       let data = item;
+                          //       customerData.txHash = item.hash;
+                                
+                          //       finalData.push(data);
+                          //     }
+                          //     if (index === allTx.length - 1) {
+                          //       if (finalData.length > 0) {
+                          //         alert("new transaction found");
+                          //         console.log(finalData);
+                          //         setOpen(true);
+                          //         return;
+                          //       } else {
+                          //         alert("no transaction found");
+                          //         return;
+                          //       }
+                          //     }
+                          //   });
+                          // }
+                        }
+                      //  });
+                      }else{
+                        setLoad(false)
+                        setType('error')
+                        setSnackbarMessage('No transaction found. Please Try again')
+                        setSnackbar(true)
+                        return
                       }
                     }
                   );
+                   }catch(e)
+                  {
+                    console.log(e)
+                    setLoad(false)
+                    setType('error')
+                    setSnackbarMessage('No transaction found. Please Try again')
+                    setSnackbar(true)
+                  // alert('No transaction, please try again')
+
+                  }
                 } else {
                   const allTX = await getAllTransactions(userWallet, network);
+                  const myTx = fullTx
+                  try{
 
+                 
                   await getTransactions().then(async (response) => {
                     console.log(response);
                     if (response) {
@@ -374,7 +608,7 @@ export default function ManualCard({ Data }) {
                       allTX.map(async (data) => {
                         //console.log(data.txHash);
                         let found = false;
-                        response.map(async (item) => {
+                        myTx.map(async (item) => {
                           if (data.txHash == item.txHash) {
                             found = true;
                             console.log("already exists");
@@ -389,54 +623,115 @@ export default function ManualCard({ Data }) {
                           setAmount(amountInRupee);
                           customerData.amount = amountInRupee;
                           customerData.txHash = data.txHash;
+                          customerData.usdt = data.value
+                          customerData.rate = exchangeRate
                           finalData.push(Data);
                         }
                       });
 
                       if (finalData.length > 0) {
-                        alert("Transaction found");
-                        console.log("My finalTx", finalData);
-                        setOpen(true);
+                        setType('success')
+                        setSnackbarMessage('New transaction found')
+                        setSnackbar(true)
+                            console.log("My finalTx", finalData);
+                        //setOpen(true);
+                        confirmTransaction(customerData)
+
                         return;
                       } else {
-                        alert("No new transaction found");
+                        setType('error')
+                        setSnackbarMessage('No transaction found. Please wait and  Try again')
+                        setSnackbar(true)
+                       // alert("No transaction found, please wait and try again");
+                        setLoad(false)
                       }
+                    }else{
+                      setLoad(false)
+                      setType('error')
+                      setSnackbarMessage('No transaction found. Please Try again')
+                      setSnackbar(true)
+                      return
                     }
                   });
+                   }catch(e)
+                  {
+                    console.log(e)
+                    setLoad(false)
+                    setType('error')
+                    setSnackbarMessage('No transaction found. Please wait and Try again')
+                    setSnackbar(true)
+                    // alert('No transaction, please try again')
+                  }
                 }
               } else {
                 if (!network) {
-                  return alert("please select a network");
+                  setType('error')
+                  setSnackbarMessage('please select a network to continue')
+                  setSnackbar(true)
+                  return// alert("please select a network");
                 }
-                // if (
-                //   !customerData?.accountNo &&
-                //   !customerData?.accountName &&
-                //   !customerData?.ifscCode &&
-                //   !customerData?.amount
-                // ) {
-                //   return alert("please add bank account details to continue");
-                // }
+                if (
+                  !customerData?.accountNo &&
+                  !customerData?.accountName &&
+                  !customerData?.ifscCode &&
+                  !customerData?.amount
+                ) {
+                  setType('error')
+                  setSnackbarMessage('please add bank account details to continue')
+                  setSnackbar(true)
+                  return //alert("please add bank account details to continue");
+                }
 
                 //console.log('tron tx',tx[0])
                 // await getTronBalance("TDnTU6qKv4fNAqdWoFgGW1zBeubNvRiuj6")
                 //await createTronWallet()
                 //TUWfa8FgnVbFa8n2P37sVGTwLKHbpio7Ey
-                setConfirm(true);
-                //  const response = await getAllTransactions('0x5C9Fc43F845425a661A1B3D5e7132076600E3395')
-                //  console.log('My transactions',response)
+                setDisable(true)
+               setConfirm(true);
+             
+          //  await getAllTx()
+          //  const response = await getAllTransactions('0x5C9Fc43F845425a661A1B3D5e7132076600E3395')
+          //  console.log('My transactions',response)
+          // let data ={
+          //     accountNo:'12345678',
+          //     accountName:'Ram prasad',
+          //     amount:1200,
+          //     businessType:'service',
+          //     ifscCode:'HDFC1234GGG',
+          //     beneficiery:'Ramu',
+          //     txHash:'124gdjkcmnb87hn21'
+          //   }
+           // console.log(data)
+          // confirmTransaction(customerData)
+                // console.log(data)
+                //Push(customerData)
+                // let today = new Date();
+                // let date = today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate();
+                // let time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+                // let dateTime = date
+                // let data = customerData
+                // data.date = dateTime
+                // data.time = time
+                // data.walletAddress=userWallet?userWallet:'qwertyuiopoihgf'
+                // data.txHash='xyzzz'
+                // data.network = network
+                // console.log(data)
+                
+                // sendEmail(data)
               }
             }}
           >
             {load ? (
               <CircularProgress color="inherit" size={18} />
             ) : !confirm ? (
-              "Confirm USDT Sent"
+              "Continue after USDT Sent"
             ) : (
-              "Complete"
+              "Verify Transaction"
             )}
           </Button>
         </CardActions>
       </Card>
+      <SnackbarComponent open={openSnackbar} setOpen={setSnackbar} message={snackbarMessage} type={type}/>
       {open && (
         <ConfirmModal
           open={open}
@@ -444,6 +739,8 @@ export default function ManualCard({ Data }) {
           Data={customerData}
           setLoad={setLoad}
           Push={Push}
+          wallet={userWallet}
+          network={network}
         />
       )}
     </div>
@@ -524,3 +821,15 @@ export default function ManualCard({ Data }) {
 // } else {
 //   return alert("network not supported yet");
 // }
+
+/*
+ let today = new Date();
+                let date = today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate();
+                let time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+                let dateTime = date
+                let data = customerData
+                data.date = dateTime
+                data.time = time
+                console.log(data)
+                sendEmail(data)
+*/

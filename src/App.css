@@ -276,6 +276,8 @@ text-align: left;
 
 #sidebar nav a:hover {
   background: #06e690;
+  color: white;
+
 }
 
 #sidebar nav a.active {
@@ -285,6 +287,11 @@ text-align: left;
 
 #sidebar nav a.pending {
   color: hsl(224, 98%, 58%);
+}
+
+#sidebar nav h3:hover{
+  color: white;
+
 }
 
 #detail {

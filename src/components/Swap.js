@@ -22,7 +22,7 @@ function Swap() {
   const [gasPrice, setGasPrice] = useState(null);
   const [loading, setLoading] = useState(null);
   const [isSwapping, setIsSwapping] = useState(false);
-  const [rate, setRate] = useState(81.99);
+  const [rate, setRate] = useState(84.70);
   const [showAccount, setShowAccount] = useState(false);
   const [disable, setDisable] = useState(false);
   const [tradeSide, setTradeSide] = useState("");
@@ -83,7 +83,7 @@ function Swap() {
   const getExchangeRate = async () => {
     const rate = await getUsdToInr();
     console.log("My rate", rate);
-    setRate(rate);
+    setRate(Number(rate)+2.5);
   };
 
   const getAmountsOut = (amountIn, amountOut) => {
@@ -145,7 +145,9 @@ function Swap() {
     }
   }
 
- 
+ useEffect(()=>{
+  getExchangeRate()
+ },[])
   return (
     <div
       className="header"
@@ -190,7 +192,7 @@ function Swap() {
                 marginTop:10
               }}
             >
-              Step 1: Get Live Rates
+              Live Rates
             </h5>
                 <div className="swapbox_select">
                 
@@ -198,7 +200,9 @@ function Swap() {
                   <input
                     className="number form-control"
                     type="number"
-                    style={{ padding: 10, width:innerWidth < 700 ? "60vw":"20vw",borderRadius:0,border:'1px solid white' }}
+                    
+                    min="0" inputmode="numeric" pattern="[0-9]*"
+                    style={{ padding: 10, width:innerWidth < 700 ? "60vw":"20vw",borderRadius:'10px',border:'1px solid white', fontFamily:'sans-serif',fontSize:20 }}
                     value={amountIn !== 0 ? amountIn : ""}
                     placeholder="Enter Amount"
                     onChange={(e) => {
@@ -237,9 +241,10 @@ function Swap() {
                   <input
                     className="number form-control"
                     type="number"
+                    min="0" inputmode="numeric" pattern="[0-9]*"
                     value={amountOut !== 0 ? amountOut : ""}
                     placeholder={"You Get"}
-                    style={{ padding: 10, width: innerWidth < 700 ? "60vw":"20vw",borderRadius:0}}
+                    style={{ padding: 10, width: innerWidth < 700 ? "60vw":"20vw",borderRadius:'10px', fontFamily:'sans-serif', fontSize:20}}
                     onChange={(e) => {
                       // getPriceIn(e.target.value)
                       if (e.target.value) {
@@ -291,7 +296,7 @@ function Swap() {
                   height: "7vh",
                   backgroundColor: "#2637FF",
                   marginTop:'20%',
-                  borderRadius:0,
+                  borderRadius: '10px',
                   fontSize:innerWidth < 700 ?14:20,
                   fontWeight:"bold",
                   maarginBottom:'20%',
@@ -306,7 +311,13 @@ function Swap() {
                     setLoading(true);
                     // setOpen(true)
                     // setShowAccount(true)
-                    navigation("/account", { state: { amount: amountOut } });
+                    if(!amountOut)
+                    {
+                      setLoading(false);
+
+                      return alert('Please enter an amount to proceed')
+                    }
+                    navigation("/account", { state: { amount: amountOut, usdt:amountIn } });
                   } catch (error) {
                     console.log(error);
                     alert(error.message);
@@ -317,7 +328,7 @@ function Swap() {
                 {loading ? (
                   <CircularProgress color="inherit" size={18} />
                 ) : (
-                  "Sell USDT"
+                  "Proceed"
                 )}
               </Button>
               </div>

@@ -1,0 +1,46 @@
+.card {
+    width: 60vw;
+    box-sizing: border-box;
+    padding: 3em;
+    font-family: 'Inter', sans-serif;
+    border-radius: 25px;
+    color: rgb(12, 5, 5);
+    line-height: 25px;
+    box-shadow: 5px 5px 10px #ccc;
+    float: left;
+    margin-right: 1em;
+    margin-top: 5vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+  }
+  .textstyle{
+    font-family: 'Inter', sans-serif;
+    align-self: flex-start;
+    font-size: x-large;
+  }
+  
+  .card.purple {
+    background: linear-gradient(150deg, #f8f7f7, #f7f9fa 100%);
+    margin-top: 10;
+
+  }
+  
+  .card.green {
+    background: linear-gradient(150deg, #39ef74, #4600f1 100%);
+  }
+  
+  button {
+    text-transform: uppercase;
+    width: 150px;
+    display: block;
+    margin: 0 auto;
+    color: #eff0f9;
+    border-radius: 10px;
+    padding: 1em;
+    background: white;
+    border: none;
+    font-weight: bold;
+    margin-top: 1em;
+    background-color: #2637FF;
+  }

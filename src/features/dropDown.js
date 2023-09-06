@@ -17,9 +17,24 @@ export default function DropDown({network, setNetwork}) {
       <FormControl fullWidth >
         <InputLabel id="demo-simple-select-label">Select Network</InputLabel>
         <Select
+         sx={{
+          color: "blue",
+          '.MuiOutlinedInput-notchedOutline': {
+            borderColor: 'blue',
+          },
+          '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+            borderColor: 'blue',
+          },
+          '&:hover .MuiOutlinedInput-notchedOutline': {
+            borderColor: 'blue',
+          },
+          '.MuiSvgIcon-root ': {
+            fill: "blue",
+          }
+        }}
+        labelId="select-filter-by-field-labe;"
+        id="select-filter-by-field"
           style={{backgroundColor:'white'}}
-          labelId="demo-simple-select-label"
-          id="demo-simple-select"
           value={network}
           label="network"
           onChange={handleChange}

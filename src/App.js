@@ -24,6 +24,11 @@ import Welcome from "./components/Welcome"
 import NewAccountPage from "./components/modals/NewAccountPage";
 import CompletePage from "./components/Complete";
 import { startMoralis } from "./components/functions/web3Functions";
+import { Dashboard } from "./Dashboard/Dashboard";
+import BodyOnlyExample from "./Dashboard/pages/Transactions";
+import Completed from "./Dashboard/pages/Completed";
+import { Login } from "./Dashboard/pages/Login";
+import { Home } from "./Dashboard/pages/home";
 
 const config = createConfig({
   autoConnect: false,
@@ -67,6 +72,7 @@ function App() {
     console.log("My rate", rate);
     setRate(rate);
   };
+  const token = localStorage.getItem('rupexToken')
 
   React.useEffect(() => {
     //getExchangeRate()
@@ -77,12 +83,10 @@ function App() {
     <WagmiConfig config={config}>
       <BrowserRouter >
       <Routes >
-        <Route path="/welcome" element={<Welcome />} />
-        <Route
-            index                 // <-- rendered on "/"
-            element={<Welcome />}
-          />
+      
         <Route path="/" element={<Root />}>
+      
+     
           <Route
             index                 // <-- rendered on "/"
             element={<Swap />}
@@ -93,6 +97,19 @@ function App() {
           <Route path="/complete" element={<CompletePage />} />
 
         </Route>
+        <Route path="/login" element={<Login />} />
+
+        <Route path="/Dashboard" element={token?<Dashboard />:<Login/>} >
+        <Route
+            index                 // <-- rendered on "/"
+            element={<Home />}
+          />
+        <Route path="tx" element={<Home />} />
+        <Route path="completed" element={<Completed />} />
+        <Route path="pending" element={<BodyOnlyExample />} />
+
+          </Route>
+        
       </Routes>
       </BrowserRouter>
     </WagmiConfig>
